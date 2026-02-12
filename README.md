@@ -1,74 +1,186 @@
-# Vehicle Counting and Tracking using YOLOv8 and ByteTrack
+# SpeedLens: Vehicle Speed Estimation, Tracking and Counting
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white)
 
 ## 1. Introduction
 
-This project aims to create a vehicle tracking and counting system using the YOLOv8 and ByteTrack models. It offers a reliable and efficient system for analyzing traffic flow, monitoring congestion, and enhancing overall road safety. The main components of the project are:
-- **YOLOv8**: The YOLOv8 model from Ultralytics is utilized for accurate and real-time vehicle detection.  
-- **ByteTrack**: ByteTrack algorithm is employed for multi-object tracking, ensuring smooth and reliable tracking of vehicles across frames.
-- **Line Counter**: We use the supervision library to count the number of vehicles entering or leaving a region.
-- **TensorRT Inference**: Export the model to TensorRT format to speed up inference.
+**SpeedLens** is an advanced vehicle tracking, counting, and speed estimation system that combines state-of-the-art computer vision models to provide comprehensive traffic analysis. Created by **Siddharth Chakraborty**, this project enables real-time monitoring of traffic flow, vehicle speed measurement, congestion analysis, and enhanced road safety insights.
+
+### Key Features
+
+- **Real-time Vehicle Detection**: Utilizes YOLOv8x for accurate detection of cars, motorcycles, buses, and trucks
+- **Multi-Object Tracking**: Employs ByteTrack algorithm for robust tracking across frames
+- **Speed Estimation**: Calculates vehicle speeds using perspective transformation and real-world coordinate mapping
+- **Vehicle Counting**: Implements line-based counting zones to track vehicles entering/exiting regions
+- **TensorRT Acceleration**: Optional TensorRT export for optimized inference performance
+- **FPS Monitoring**: Real-time frames-per-second display for performance tracking
+
+### Main Components
+
+- **YOLOv8**: The YOLOv8x model from Ultralytics provides accurate and real-time vehicle detection
+- **ByteTrack**: Multi-object tracking algorithm ensuring smooth and reliable tracking of vehicles across frames
+- **Perspective Transformation**: Converts pixel coordinates to real-world measurements for accurate speed calculation
+- **Line Counter**: Supervision library integration for counting vehicles crossing designated zones
+- **TensorRT Inference**: Optional model export to TensorRT format for accelerated inference
 
 ## 2. Installation
 
-To use this repository, we need to set up our environment with its required libraries. The steps are:
+To set up SpeedLens, follow these steps to configure your environment with the required dependencies:
 
-1. Clone the repository:
+### Prerequisites
+- Python 3.8 or higher
+- CUDA-capable GPU (optional, for TensorRT acceleration)
 
-   ```
-   git clone https://github.com/arief25ramadhan/vehicle-tracking-counting.git
-   ```
+### Setup Steps
 
-2. Go to the repository, and install dependencies:
+1. **Clone the repository:**
+```bash
+   git clone https://github.com/yourusername/speedlens.git
+```
 
-   ```
-   cd vehicle-tracking-counting
+2. **Navigate to the repository and install dependencies:**
+```bash
+   cd speedlens
    pip install -r requirements.txt
-   ```
+```
 
-3. Inside this current repo, clone the ByteTrack Libraries:
-
-    ```
+3. **Clone the ByteTrack library inside the current repo:**
+```bash
    git clone https://github.com/ifzhang/ByteTrack.git
-   ```
+```
     
-4. Install ByteTrack dependencies:
-   ```
+4. **Install ByteTrack dependencies:**
+```bash
    cd ByteTrack
    
-   # workaround related to https://github.com/roboflow/notebooks/issues/80
+   # Workaround for compatibility issue
    sed -i 's/onnx==1.8.1/onnx==1.9.0/g' requirements.txt
 
    pip install -r requirements.txt
-
    python3 setup.py develop
    pip install cython_bbox onemetric loguru lap thop
-   ```
+   
+   cd ..
+```
 
+5. **Configure speed estimation parameters:**
+   
+   Edit `speed_config.py` to set up the perspective transformation points that match your camera view. Define source points (pixel coordinates) and target points (real-world coordinates in meters).
 
 ## 3. Usage
 
-To perform inference using the vehicle tracker and counter pipeline:
-1. Go to `main.py`. In the last few lines, change the `input_video`, `output_video` and `use_tensorrt` variables accordingly. The `input_video` refers to the video we want to perform tracking and counting on, while the `output_video` is the desired path of the prediction. The `use_tensorrt` is a boolean variable indicating whether to use TensorRT format for a quicker inference time.
-2. Save changes.
-3. Run detection and tracking by executing this command in your terminal:
+### Running Vehicle Tracking and Speed Estimation
 
-   ```
+1. **Configure the pipeline** by editing `main.py`:
+```python
+   input_video = "assets/vehicle-counting.mp4"      # Path to input video
+   output_video = "assets/vehicle-counting-result.mp4"  # Path to save output
+   use_tensorrt = False  # Set to True for TensorRT acceleration
+```
+
+2. **Adjust the counting line** (optional):
+   
+   In the `vehicle_tracker_and_counter` class initialization, modify:
+```python
+   self.line_start = sv.Point(50, 1500)
+   self.line_end = sv.Point(3840-50, 1500)
+```
+
+3. **Run the detection, tracking, and speed estimation pipeline:**
+```bash
    python main.py
-   ```
+```
 
-4. The predicted video should be available in the output_video path. Figure below displays the example frame of the predicted video.
+4. **Output**: The processed video will be saved to the specified `output_video` path, displaying:
+   - Bounding boxes around detected vehicles
+   - Tracker IDs for each vehicle
+   - Real-time speed estimates (km/h)
+   - Vehicle counts crossing the line
+   - FPS performance metrics
+
+### Example Output
 
 <p align="center">
-  <img src="assets/output_video.PNG" width="600" title="Output Video Frame">
+  <img src="assets/output_video.PNG" width="700" title="SpeedLens Output Frame">
 </p>
 
+The output frame shows tracked vehicles with unique IDs, their estimated speeds in km/h, confidence scores, and the counting line with vehicle totals.
 
-## References
+## 4. Project Structure
+```
+speedlens/
+├── main.py                 # Main pipeline script
+├── utils.py                # Utility functions for tracking
+├── speed_config.py         # Perspective transformation configuration
+├── requirements.txt        # Python dependencies
+├── assets/                 # Input/output videos and images
+├── ByteTrack/             # ByteTrack submodule
+└── README.md              # This file
+```
 
-This project is heavily based on tutorial by [Roboflow](https://github.com/roboflow) in this [colab notebook](https://colab.research.google.com/github/roboflow-ai/notebooks/blob/main/notebooks/how-to-track-and-count-vehicles-with-yolov8.ipynb#scrollTo=Q9ppb7bFvWfc). It works by combining the YOLOv8 model from Ultralytics and ByteTrack model developed by Yifu Zhange, et al. The links to the YOLOv8 and and ByteTrack repository are:
+## 5. How It Works
 
-- YOLOv8: [Link to YOLOv8 repository](https://github.com/ultralytics/ultralytics)
-- ByteTrack: [Link to ByteTrack repository](https://github.com/ifzhang/ByteTrack)
+### Detection
+YOLOv8x detects vehicles in each frame, filtering for specific classes (cars, motorcycles, buses, trucks).
+
+### Tracking
+ByteTrack associates detections across frames, assigning unique IDs to maintain vehicle identity.
+
+### Speed Estimation
+1. Bottom-center points of bounding boxes are extracted
+2. Points are transformed to real-world coordinates using perspective transformation
+3. Vehicle displacement is tracked over time
+4. Speed is calculated as distance/time and converted to km/h
+
+### Counting
+A virtual line zone counts vehicles as they cross the designated threshold.
+
+## 6. Customization
+
+### Adjust Detection Classes
+Modify `self.CLASS_ID` in `main.py` to detect different vehicle types:
+```python
+self.CLASS_ID = [2, 3, 5, 7]  # car, motorcycle, bus, truck
+```
+
+### Configure Speed Calculation
+Edit `speed_config.py` to calibrate the perspective transformation for your specific camera setup.
+
+### TensorRT Optimization
+Enable TensorRT for faster inference:
+```python
+use_tensorrt = True
+```
+
+## 7. Performance
+
+- **Detection**: YOLOv8x provides high accuracy with real-time performance
+- **Tracking**: ByteTrack maintains stable tracking even in crowded scenes
+- **Speed Estimation**: Accurate speed measurement within calibrated zones
+- **FPS**: Displayed in real-time on output video
+
+## 8. Author
+
+**Siddharth Chakraborty**
+
+## 9. References
+
+This project builds upon and integrates several outstanding open-source projects:
+
+- **Roboflow Tutorial**: Based on the [vehicle tracking and counting notebook](https://colab.research.google.com/github/roboflow-ai/notebooks/blob/main/notebooks/how-to-track-and-count-vehicles-with-yolov8.ipynb)
+- **YOLOv8**: [Ultralytics YOLOv8 Repository](https://github.com/ultralytics/ultralytics)
+- **ByteTrack**: [ByteTrack Repository](https://github.com/ifzhang/ByteTrack) by Yifu Zhang et al.
+- **Supervision**: [Supervision Library](https://github.com/roboflow/supervision) by Roboflow
+
+## 10. License
+
+This project is provided as-is for educational and research purposes. Please refer to the individual licenses of YOLOv8, ByteTrack, and Supervision libraries for commercial use.
+
+## 11. Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page or submit a pull request.
+
+---
+
+**SpeedLens** - Comprehensive traffic analysis powered by computer vision
